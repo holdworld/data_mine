@@ -15,11 +15,11 @@ def excel_to_mongodb(path):
     line   = excel.readline().strip('\n')
     while len(line)>0:
         num += 1
-        person.save_to_mongo( line )
+        person.parse( line )
         line = excel.readline().strip('\n')
 
     print("total:%s"%num)
 
-
 if __name__ == '__main__':
-    excel_to_mongodb("K:\\mongodb\\1-200W.csv")
+    #test()
+    excel_to_mongodb("K:\\mongodb\\200W-400W.csv")
