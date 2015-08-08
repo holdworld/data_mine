@@ -6,50 +6,55 @@ import pymongo
 
 class Person:
     def __init__(self):
-        self.keys = [('id',3), ('sex',4), ('bd',5), ('addr',6), ('zc',7), ('phone',18),
-                     ('tel',19), ('fax',20), ('email',21), ('time',30), ('room',31)]
+        self.keys = [('name',0), ('id',4), ('sex',5), ('bd',6), ('addr',7), ('zc',8), ('phone',19),
+                     ('tel',20), ('fax',21), ('email',22), ('time',31), ('room',32)]
 
         self.coll = pymongo.MongoClient("192.168.0.9", 2015)['hotel']['guest']
 
-        self.operator = {32:self.parse_32, 7:self.parse_7};
+        self.operator = {8:self.parse_8,33:self.parse_33}
+
+    def preprocess(self, line):
+        end     = -1
+        replace = []
+        while True:
+            try:
+                begin = line.index(u'\"', end+1)
+                end   = line.index(u'\"', begin+1)
+                old   = line[begin:end+1]
+                new   = old.replace(u',', u'，')
+                replace.append((old, new))
+            except:
+                break
+
+        for item in replace:
+            line = line.replace(item[0], item[1])
+
+        return line
 
     def parse(self, line):
-        line = line.decode('utf-8')
-        name = u''
-        if line[0]==u'\"':
-            try:
-                idx  = line.index(u"\"",1)
-                name = line[1:idx]
-                line = line[idx+2:]
-            except:
-                print line
-        else:
-            idx  = line.index(u",")
-            name = line[0:idx]
-            line = line[idx+1:]
+        line  = self.preprocess(line.decode('utf-8'))
         items = line.split(u',')
 
         try:
-            json = {}
-            self.operator[len(items)](items, json)
-            json["name"] = name
-            print ','.join(["%s:%s"%(k,v) for k,v in json.items()])
+            json = self.operator[len(items)](items)
+            #print ','.join(["%s:%s"%(k,v) for k,v in json.items()])
         except:
-            pass
+            print(line)
 
-    def parse_7(self, items, json):
-        for i in range(0, 4):
+    def parse_8(self, items):
+        json = {}
+        for i in range(0, 5):
             key = self.keys[i]
             if len(items[key[1]])!=0:
                 json[key[0]] = items[key[1]]
+        return json
 
-    def parse_32(self, items, json):
+    def parse_33(self, items):
+        json = {}
         for key in self.keys:
             if len(items[key[1]])!=0:
                 json[key[0]] = items[key[1]]
-
-    def parse_34(self, items, json):
-        pass
+        return json
 
     def save_to_mongo(self, line):
         self.coll.insert_one( self.parse(line) )
